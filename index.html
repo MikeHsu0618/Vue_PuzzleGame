@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TODO</title>
+    <link rel="stylesheet" href="./19-todo.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div class="wait">
+        <ul>
+          <li
+            v-for="(item, idx) in puzzleWait.content"
+            :key="item.url"
+            @click="handleClick(item,idx)"
+          >
+            <img :src="item.url"  />
+          </li>
+        </ul>
+      </div>
+      <div class="carried">
+        <ul>
+            <li
+            v-for="(item, idx) in puzzleCarried.content"
+            :key="item.idx"
+            @click="resetClick(item, idx)"
+          >
+            <img :src="item.url"/>
+          </li>
+        </ul>
+      </div>
+      <div :class="['winPage', {open: isWin}]">
+        <h1>闖關成功</h1>
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.20.0/axios.min.js"></script>
+    <script src="https://unpkg.com/vue@next"></script>
+    <script>
+      const { ref, reactive, onMounted, watch } = Vue;
+      const app = {
+        setup() {
+            onMounted(() => {
+              axios.get("./puzzle.json").then((res) => {
+                puzzleWait.content = res.data;
+                ArrLength.value = res.data.length 
+              });
+            });
+          const winIdx = ref(0);
+          const puzzleWait = reactive({ content: [] });
+          const puzzleCarried = reactive({ content: [] });
+
+          watch(
+            () => puzzleCarried.content,
+            (imgItem) => {
+                winIdx.value = 0;
+              imgItem.forEach((el, idx) => {
+                if (el.idx === idx) {
+                  winIdx.value++;
+                }
+              }
+              );
+            },
+            { deep: true }
+          );
+
+          watch(winIdx, (i) => {
+            if (i === ArrLength.value) {
+              setTimeout(() => {
+                isWin.value = true;
+              }, 500);
+            }
+          });
+          const ArrLength = ref(0)
+          const isWin = ref(false);
+          const handleClick = (item, idx)=>{
+            puzzleCarried.content.push(item);
+            puzzleWait.content.splice(idx,1);
+          }
+          const resetClick = (item, idx)=>{
+            puzzleWait.content.push(item);
+            puzzleCarried.content.splice(idx,1);
+          }
+
+          return {
+            puzzleWait,handleClick,puzzleCarried,puzzleWait,resetClick,isWin,ArrLength
+          };
+        },
+      };
+      Vue.createApp(app).mount("#app");
+    </script>
+  </body>
+</html>
